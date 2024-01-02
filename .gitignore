@@ -308,3 +308,4 @@ $RECYCLE.BIN/
 # Cofbot
 /cofbot_token
 /cofbot_link
+/cofbot.db

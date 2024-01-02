@@ -1,17 +1,33 @@
+import asyncio
+
 import discord
+import peewee
 from discord.ext import commands
 
-client = commands.Bot(command_prefix='cof?', intents=discord.Intents(messages=True, message_content=True))
+bot = commands.Bot(command_prefix='cof?', intents=discord.Intents(messages=True, message_content=True))
 
 
-@client.event
+@bot.event
 async def on_ready():
     print('Bot is ready.')
 
 
-@client.command()
+@bot.command()
 async def ping(ctx):
     await ctx.send('Quack!')
 
-with open('cofbot_token', 'r') as f:
-    client.run(f.read().strip())
+
+async def load_extensions():
+    try:
+        await bot.load_extension('triggers')
+    except peewee.PeeweeException as e:
+        print(f"An error has occurred while initializing the database: {e}")
+        exit(1)
+
+
+async def main():
+    with open('cofbot_token', 'r') as f:
+        await load_extensions()
+        await bot.start(f.read().strip())
+
+asyncio.run(main())
