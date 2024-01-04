@@ -1,6 +1,7 @@
 import re
 
 import discord
+from . import help_pages
 from discord.ext import commands
 from cofdb import db, BaseModel
 from peewee import *
@@ -66,17 +67,7 @@ class TriggerCog(commands.Cog):
 
     @staticmethod
     async def get_help(interaction: discord.Interaction):
-        embed = discord.Embed(title="Triggers Help")
-        embed.add_field(name="list", value="Display a list of all triggers")
-        embed.add_field(name="add", value="Add a new trigger")
-        embed.set_footer(text="Page 1/2")
-
-        embed2 = discord.Embed(title="Trigger Help")
-        embed2.add_field(name="remove", value="Remove a trigger")
-        embed2.add_field(name="edit", value="Edit a trigger")
-        embed2.set_footer(text="Page 2/2")
-
-        pages = Pages([embed, embed2])
+        pages = Pages(help_pages.get())
         await pages.show(interaction)
 
 

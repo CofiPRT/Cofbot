@@ -35,9 +35,14 @@ class Pages(discord.ui.View):
             self.goto.disabled = True
 
         self.current_page = self.clamp_index(start_page)
+        self.original_response = None
 
     async def show(self, interaction: discord.Interaction):
         await self.show_page(self.current_page, interaction, first_interaction=True)
+
+    async def on_timeout(self):
+        self.clear_items()
+        await self.original_response.edit(view=self)
 
     @discord.ui.button(style=discord.ButtonStyle.blurple, emoji="⏮")
     async def first(self, interaction: discord.Interaction, _: discord.ui.Button):
@@ -50,7 +55,7 @@ class Pages(discord.ui.View):
     @discord.ui.button(style=discord.ButtonStyle.blurple)
     async def goto(self, interaction: discord.Interaction, _: discord.ui.Button):
         async def callback_func(page_number: int):
-            await self.show_page(page_number - 1, interaction)
+            await self.show_page(page_number - 1, interaction, first_interaction=False, defer_on_edit=False)
 
         await interaction.response.send_modal(PageNumberModal(self.page_count, callback_func))  # type: ignore
 
@@ -62,7 +67,10 @@ class Pages(discord.ui.View):
     async def last(self,  interaction: discord.Interaction, _: discord.ui.Button):
         await self.show_page(self.page_count - 1, interaction)
 
-    async def show_page(self, index: int, interaction: discord.Interaction, first_interaction: bool = False):
+    async def show_page(
+            self, index: int, interaction: discord.Interaction,
+            first_interaction: bool = False, defer_on_edit: bool = True
+    ):
         self.current_page = self.clamp_index(index)
         self.goto.label = f"{self.current_page + 1}/{self.page_count}"
 
@@ -76,9 +84,11 @@ class Pages(discord.ui.View):
 
         if first_interaction:
             await interaction.response.send_message(embed=self.pages[self.current_page], view=self)  # type: ignore
+            self.original_response = await interaction.original_response()
         else:
             await interaction.message.edit(embed=self.pages[self.current_page], view=self)
-            await interaction.response.defer()  # type: ignore
+            if defer_on_edit:
+                await interaction.response.defer()  # type: ignore
 
     def clamp_index(self, index: int):
         return min(max(index, 0), self.page_count - 1)

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import discord
 import peewee
@@ -6,6 +7,7 @@ from discord.ext import commands
 from typing import Literal, Optional
 
 bot = commands.Bot(command_prefix='cof?', intents=discord.Intents(messages=True, message_content=True))
+log_handler = logging.FileHandler(filename='cofbot.log', encoding='utf-8', mode='w')
 
 
 @bot.event
@@ -65,8 +67,8 @@ async def load_extensions():
 
 
 async def main():
-    with open('cofbot_token', 'r') as f:
-        await load_extensions()
-        await bot.start(f.read().strip())
+    await load_extensions()
 
 asyncio.run(main())
+with open('cofbot_token', 'r') as f:
+    bot.run(f.read().strip(), log_handler=log_handler)
