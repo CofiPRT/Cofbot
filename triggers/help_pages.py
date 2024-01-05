@@ -1,4 +1,5 @@
 import discord
+from .descriptions import desc
 
 BLANK = "\u200b"
 USE_LEGACY_INLINE_SPLITS = True
@@ -14,22 +15,24 @@ def get():
         get_command_add_2(),
         get_command_edit(),
         get_command_remove(),
+        get_command_setglobal(),
+        get_command_reset(),
         get_property_mode_1(),
         get_property_mode_2(),
         get_property_response_1(),
         get_property_response_2(),
-        get_property_uses_wildcards()
+        get_caveats()
     ]
 
     # add page numbers
     for i in range(len(embed_infos)):
-        footer_info = [f"Page {i + 1}/{len(embed_infos)}"]
+        footer_info = [f"📃 Page {i + 1}/{len(embed_infos)}"]
 
         if i > 0:
-            footer_info.append(f"Previous: [{get_title_from_info(embed_infos[i - 1])}]")
+            footer_info.append(f"⬅️ Previous: [{get_title_from_info(embed_infos[i - 1])}]")
 
         if i < len(embed_infos) - 1:
-            footer_info.append(f"Next: [{get_title_from_info(embed_infos[i + 1])}]")
+            footer_info.append(f"➡️ Next: [{get_title_from_info(embed_infos[i + 1])}]")
 
         embed_infos[i][0].set_footer(text=" | ".join(footer_info))
 
@@ -45,7 +48,7 @@ def get():
         embed.title = f"Triggers Help - {formatted_title}"
         contents.append(f"`Page {str(i + 1).rjust(padding)}` {formatted_title}")
 
-    embed_infos[0][0].add_field(inline=False, name="Table of Contents", value="\n".join(contents))
+    embed_infos[0][0].add_field(inline=False, name="📑 Table of Contents", value="\n".join(contents))
 
     return [embed_info[0] for embed_info in embed_infos]
 
@@ -87,7 +90,7 @@ def get_preface():
     embed = discord.Embed()
 
     embed.add_field(
-        inline=False, name="Summary", value=(
+        inline=False, name="📋 Summary", value=(
             "Triggers are a way to make the bot respond to certain messages.\n"
             "This module offers multiple _matching modes_ along with the special mode `regex`, "
             "which allows you to use **regular expressions** to match messages, giving you the most flexibility."
@@ -102,13 +105,15 @@ def get_commands():
 
     embed.add_field(inline=False, name="", value="The module introduces multiple slash commands.")
     add_split_fields(
-        embed, ["Command", "Description"], "Commands", [
-            ("`/triggers help`", "Display this help menu"),
-            ("`/triggers list`", "Display a list of all triggers"),
-            ("`/triggers inspect`", "Display information about a specific trigger"),
-            ("`/triggers add`", "Add a new trigger"),
-            ("`/triggers edit`", "Edit an existing trigger"),
-            ("`/triggers remove`", "Remove an existing trigger")
+        embed, ["📋 Command", "📄 Description"], "📋 Commands", [
+            ("`/triggers help`", desc.command.help),
+            ("`/triggers list`", desc.command.list),
+            ("`/triggers inspect`", desc.command.inspect),
+            ("`/triggers add`", desc.command.add),
+            ("`/triggers edit`", desc.command.edit),
+            ("`/triggers remove`", desc.command.remove),
+            ("`/triggers setglobal`", desc.command.setglobal),
+            ("`/triggers reset`", desc.command.reset)
         ]
     )
 
@@ -118,9 +123,9 @@ def get_commands():
 def get_command_list():
     embed = discord.Embed()
 
-    embed.add_field(inline=False, name="Usage", value="`/triggers list`")
+    embed.add_field(inline=False, name="✏️ Usage", value="`/triggers list`")
     embed.add_field(
-        inline=False, name="Description", value=(
+        inline=False, name="📄 Description", value=(
             "This command allows you to view a list of all existing triggers.\n"
             "Useful to retrieve the ID of a trigger before editing or removing it."
         )
@@ -132,15 +137,15 @@ def get_command_list():
 def get_command_inspect():
     embed = discord.Embed()
 
-    embed.add_field(inline=False, name="Usage", value="`/triggers inspect <id>`")
+    embed.add_field(inline=False, name="✏️ Usage", value="`/triggers inspect <id>`")
     embed.add_field(
-        inline=False, name="Description", value=(
+        inline=False, name="📄 Description", value=(
             "This command allows you to view detailed information about an existing trigger.\n"
             "Useful to check if a trigger is working as intended or before editing one."
         )
     )
     add_split_fields(
-        embed, ["Argument", "Description"], "Arguments", [
+        embed, ["🔣 Argument", "📄 Description"], "🔣 Arguments", [
             (
                 "[**Required**] `id`",
                 "The ID of the trigger to inspect. You can view each trigger's ID "
@@ -156,18 +161,18 @@ def get_command_add_1():
     embed = discord.Embed()
 
     embed.add_field(
-        inline=False, name="Usage",
+        inline=False, name="✏️ Usage",
         value="`/triggers add <mode> <pattern> <response> [options]`"
     )
     embed.add_field(
-        inline=False, name="Description", value=(
+        inline=False, name="📄 Description", value=(
             "This command allows you to create a new trigger.\n"
             "The logic behind the trigger depends heavily on the _matching mode_ you choose.\n"
             "The trigger will be added **at the end** of the list of triggers, and will be available immediately."
         )
     )
     add_split_fields(
-        embed, ["Argument", "Description"], "Arguments", [
+        embed, ["🔣 Argument", "📄 Description"], "🔣 Arguments", [
             (
                 "[**Required**] `mode`",
                 "The _matching mode_ to use. One of `plain`, `word`, `full`, `regex`."
@@ -192,25 +197,37 @@ def get_command_add_1():
 def get_command_add_2():
     embed = discord.Embed()
 
+    embed.add_field(
+        inline=False, name="💡 Optional Arguments", value=(
+            "Some optional arguments take their default values from the global trigger settings set "
+            "via the `/triggers setdefault` command.\n"
+            "Explicitly setting a value for an optional argument will make use of that value instead "
+            "of the default one."
+        )
+    )
     add_split_fields(
-        embed, ["Argument", "Description"], "Arguments", [
+        embed, ["🔣 Argument", "📄 Description"], "🔣 Arguments", [
             (
                 "[_Optional_] `cooldown`",
                 "The cooldown of the trigger, in seconds. The bot will ignore messages that match the "
                 "trigger if they are sent within the cooldown period.\n"
-                "Defaults to `0`."
+                "Defaults to its global value."
             ),
             (
                 "[_Optional_] `case_sensitive`",
                 "Whether to treat uppercase and lowercase letters the same. If set to `false`, the bot "
                 "will ignore the case of the letters and treat \"a\" and \"A\" as the same letter.\n"
-                "Defaults to `false`."
+                "Defaults to its global value."
             ),
             (
-                "[_Optional_] `uses_wildcards`",
-                "Whether to treat the pattern as a wildcard pattern. If set to `true`, the bot will treat "
-                "\"?\" and \"*\" as wildcards, and match them to any character or any sequence of characters.\n"
-                "Defaults to `false`."
+                "[_Optional_] `avoid_links`",
+                "If set to `true`, the bot will not look for the pattern in links.\n"
+                "Defaults to its global value."
+            ),
+            (
+                "[_Optional_] `avoid_emotes`",
+                "If set to `true`, the bot will not look for the pattern in emote names.\n"
+                "Defaults to its global value."
             ),
             (
                 "[_Optional_] `start`",
@@ -220,16 +237,6 @@ def get_command_add_2():
             (
                 "[_Optional_] `end`",
                 "If set to `true`, the bot will only match the pattern if it is at the end of the message.\n"
-                "Defaults to `false`."
-            ),
-            (
-                "[_Optional_] `avoid_links`",
-                "If set to `true`, the bot will not look for the pattern in links.\n"
-                "Defaults to `false`."
-            ),
-            (
-                "[_Optional_] `avoid_emotes`",
-                "If set to `true`, the bot will not look for the pattern in emote names.\n"
                 "Defaults to `false`."
             )
         ]
@@ -242,11 +249,11 @@ def get_command_edit():
     embed = discord.Embed()
 
     embed.add_field(
-        inline=False, name="Usage",
+        inline=False, name="✏️ Usage",
         value="`/triggers edit <id> [properties]`"
     )
     embed.add_field(
-        inline=False, name="Description", value=(
+        inline=False, name="📄 Description", value=(
             "This command allows you to edit an existing trigger.\n"
             "\n"
             "You can modify any of the trigger's properties defined in the `/triggers add` command, "
@@ -256,7 +263,7 @@ def get_command_edit():
         )
     )
     add_split_fields(
-        embed, ["Argument", "Description"], "Arguments", [
+        embed, ["🔣 Argument", "📄 Description"], "🔣 Arguments", [
             (
                 "[**Required**] `id`",
                 "The ID of the trigger to edit. You can view each trigger's ID "
@@ -276,18 +283,18 @@ def get_command_remove():
     embed = discord.Embed()
 
     embed.add_field(
-        inline=False, name="Usage",
+        inline=False, name="✏️ Usage",
         value="`/triggers remove <id>`"
     )
     embed.add_field(
-        inline=False, name="Description", value=(
+        inline=False, name="📄 Description", value=(
             "This command allows you to remove an existing trigger.\n"
             "\n"
             "The trigger will be removed immediately."
         )
     )
     add_split_fields(
-        embed, ["Argument", "Description"], "Arguments", [
+        embed, ["🔣 Argument", "📄 Description"], "🔣 Arguments", [
             (
                 "[**Required**] `id`",
                 "The ID of the trigger to remove. You can view each trigger's ID "
@@ -299,18 +306,87 @@ def get_command_remove():
     return embed, "Command: `remove`", "Command: remove"
 
 
+def get_command_setglobal():
+    embed = discord.Embed()
+
+    embed.add_field(
+        inline=False, name="✏️ Usage",
+        value="`/triggers setglobal [options]`"
+    )
+    embed.add_field(
+        inline=False, name="📄 Description", value=(
+            "This command allows you to change the global values for some optional properties.\n"
+            "\n"
+            "Keep in mind that properties that were explicitly set for a trigger will take precedence "
+            "over the global values.\n"
+        )
+    )
+    add_split_fields(
+        embed, ["🌍 Global Values", "🔢 Default Value"], "🌍 Global Values", [
+            (
+                "`cooldown`",
+                "Defaults to `0`."
+            ),
+            (
+                "`case_sensitive`",
+                "Defaults to `false`."
+            ),
+            (
+                "`avoid_links`",
+                "Defaults to `false`."
+            ),
+            (
+                "`avoid_emotes`",
+                "Defaults to `false`."
+            )
+        ]
+    )
+
+    return embed, "Command: `setglobal`", "Command: setglobal"
+
+
+def get_command_reset():
+    embed = discord.Embed()
+
+    embed.add_field(
+        inline=False, name="✏️ Usage",
+        value="`/triggers reset <id> <property>`"
+    )
+    embed.add_field(
+        inline=False, name="📄 Description", value=(
+            "This command allows you to reset a trigger's optional property to its global value, "
+            "as set by the `/triggers setglobal` command.\n"
+        )
+    )
+    add_split_fields(
+        embed, ["🔣 Argument", "📄 Description"], "🔣 Arguments", [
+            (
+                "[**Required**] `id`",
+                "The ID of the trigger whose property should be reset. You can view each trigger's ID "
+                "using the `/triggers list` command."
+            ),
+            (
+                "[**Required**] `property`",
+                "The property to reset. One of `cooldown`, `case_sensitive`, `avoid_links`, `avoid_emotes`."
+            )
+        ]
+    )
+
+    return embed, "Command: `reset`", "Command: reset"
+
+
 def get_property_mode_1():
     embed = discord.Embed()
 
     embed.add_field(
-        inline=False, name="Description", value=(
+        inline=False, name="📄 Description", value=(
             "The logic behind the trigger depends heavily on the _matching mode_ you choose.\n"
             "The following modes are available: `plain`, `word`, `full`, `regex`.\n" +
             BLANK
         )
     )
     embed.add_field(
-        inline=False, name="Mode: `plain`", value=(
+        inline=False, name="⚙️ Mode: `plain`", value=(
             "This mode is the simplest one. The bot will check if the message contains the pattern, "
             "wherever it is in the message.\n"
             "This means that a pattern of `\"end\"` _will_ trigger on the message `\"Friendship is important\"`, "
@@ -319,7 +395,7 @@ def get_property_mode_1():
         )
     )
     embed.add_field(
-        inline=False, name="Mode: `word`", value=(
+        inline=False, name="⚙️ Mode: `word`", value=(
             "This mode may be the most useful one. The bot will check if the message contains the "
             "given pattern, but only if it is not part of other words.\n"
             "This means that a pattern of `\"end\"` _will not_ trigger on the message `\"Friendship is important\"`, "
@@ -341,7 +417,7 @@ def get_property_mode_2():
     embed = discord.Embed()
 
     embed.add_field(
-        inline=False, name="Mode: `full`", value=(
+        inline=False, name="⚙️ Mode: `full`", value=(
             "The bot will check _the entire message_ against the pattern. This means that the pattern "
             "`\"Friendship is important\"` _will not_ trigger on the message `\"Friendship is important!\"`, "
             "because the message contains an exclamation mark, which is not part of the pattern.\n" +
@@ -349,7 +425,7 @@ def get_property_mode_2():
         )
     )
     embed.add_field(
-        inline=False, name="Mode: `regex`", value=(
+        inline=False, name="⚙️ Mode: `regex`", value=(
             "This mode allows you to use a regular expression as the pattern. This is the most powerful "
             "mode, but also the most complicated one. "
             "_Any other mode can be replicated using a regular expression._\n"
@@ -376,7 +452,7 @@ def get_property_response_1():
     embed = discord.Embed()
 
     embed.add_field(
-        inline=False, name="Description", value=(
+        inline=False, name="📄 Description", value=(
             "The response is the message that the bot will send when the trigger is matched.\n"
             "\n"
             "You can specify multiple responses by separating them with a semicolon (`;`). The bot will "
@@ -388,7 +464,7 @@ def get_property_response_1():
         )
     )
     embed.add_field(
-        inline=False, name="Variable `{author_username}`", value=(
+        inline=False, name="⚙️ Variable `{author_username}`", value=(
             "The **username** of the author of the message that triggered the response.\n"
             "This is the unique name that identifies the user, and is not necessarily the same as their "
             "display name or server nickname.\n" +
@@ -396,19 +472,25 @@ def get_property_response_1():
         )
     )
     embed.add_field(
-        inline=False, name="Variable `{author_display_name}`", value=(
+        inline=False, name="⚙️ Variable `{author_display}`", value=(
             "The **display name** of the author of the message that triggered the response.\n" +
             BLANK
         )
     )
     embed.add_field(
-        inline=False, name="Variable `{author_server_nickname}`", value=(
+        inline=False, name="⚙️ Variable `{author_nickname}`", value=(
             "The **server nickname** of the author of the message that triggered the response.\n" +
             BLANK
         )
     )
     embed.add_field(
-        inline=False, name="Additional features", value=(
+        inline=False, name="⚙️ Variable `{author_id}`", value=(
+            "The **user ID** of the author of the message that triggered the response.\n" +
+            BLANK
+        )
+    )
+    embed.add_field(
+        inline=False, name="💡 Additional features", value=(
             "You can add \"@\" before any of these variables to mention the user instead of just using their name."
         )
     )
@@ -420,26 +502,18 @@ def get_property_response_2():
     embed = discord.Embed()
 
     embed.add_field(
-        inline=False, name="Variable `{match<id>}`", value=(
-            "[**Advanced**] This variable only has effect when using the `regex` mode or the `uses_wildcards` option.\n"
-            "It will be replaced with the text that matched the corresponding group in the regular expression, "
-            "or the corresponding wildcard-containing word.\n"
+        inline=False, name="⚙️ Variable `{match<id>}`", value=(
+            "[**Advanced**] This variable only has effect when using the `regex` mode.\n"
+            "It will be replaced with the text that matched the corresponding group in the regular expression.\n"
             "\n"
             "For example, if you use the regex pattern `\"(hello|hi) (there|people)\"`, and the message is "
             "`\"hello there\"`, the variable `{match1}` will be replaced with `\"hello\"`, and `{match2}` "
-            "with `\"there\"`.\n"
-            "\n"
-            "If you use the wildcard pattern `\"I * you\"`, and the message is `\"I love you\"`, the variable "
-            "`{match1}` will be replaced with `\"love\"`.\n"
-            "\n"
-            "If you use the wildcard pattern `\"I love p*c?ns and p?ns so* much\"`, and the message is "
-            "`\"I love pelicans and pens sooo much\"`, the variable `{match1}` will be replaced with `\"pelicans\"`, "
-            "and `{match2}` with `\"pens\"`, and `{match3}` with `\"sooo\"`.\n" +
+            "with `\"there\"`.\n" +
             BLANK
         )
     )
     embed.add_field(
-        inline=False, name="Additional features", value=(
+        inline=False, name="💡 Additional features", value=(
             "[**Advanced**] If you need to use any special characters mentioned above in your response, you can "
             "escape them by adding a backslash (`\\`) before them. For example, if you want to use an actual "
             "semicolon (`;`) in your response, you can write `\\;` instead.\n"
@@ -451,48 +525,27 @@ def get_property_response_2():
     return embed, "Property: `response` (2)", "Property: response (2)"
 
 
-def get_property_uses_wildcards():
+def get_caveats():
     embed = discord.Embed()
 
     embed.add_field(
-        inline=False, name="Description", value=(
-            "This argument is optional. If you don't specify it, the bot will assume that you don't want to "
-            "use wildcards.\n"
-            "**This argument is ignored if you use the `regex` mode.**\n"
+        inline=False, name="🆔 Why are IDs important?", value=(
+            "A trigger's ID determines its position in the list of triggers.\n"
+            "Whenever a message is sent, the triggers will be checked in order, and the first one that matches "
+            "will determine the response.\n"
             "\n"
-            "Wildcards allow you to use the special characters `?` and `*` in your pattern, both of them "
-            "holding special meanings.\n" +
-            BLANK
-        )
-    )
-    embed.add_field(
-        inline=False, name="`?` matches any single character", value=(
-            "For example, the pattern `\"p?n\"` will match `\"pin\"`, `\"pan\"`, `\"pun\"`, etc.\n" +
-            BLANK
-        )
-    )
-    embed.add_field(
-        inline=False, name="`*` matches any number of characters, including none", value=(
-            "For example, the pattern `\"p*n\"` will match `\"pn\"`, `\"pin\"`, `\"pan\"`, `\"pelican\"`, etc.\n"
-            "The pattern `\"p*\"` essentially means \"any word that starts with `p`\".\n"
-            "The pattern `\"I love c* so much\"` will match `\"I love cats so much\"`, `\"I love cookies so much\"` "
-            "etc.\n"
-            "The pattern `\"I love p*c?ns and p?ns so* much\"` will match `\"I love pelicans and pens sooo much\"`, "
-            "`\"I love pelicans and pans so much\"`, etc."
-        )
-    )
-    embed.add_field(
-        inline=False, name="", value=(
-            "Keep in mind that these wildcards only apply to **single words**. If you want a more advanced "
-            "logic, consider using the `regex` mode.\n"
+            "Suppose you have two plain triggers, the first having the pattern `\"end\"`, and the second having "
+            "the pattern `\"friend\"`. If you send the message `\"friendship\"`, which one do you expect to trigger?\n"
+            "Well, to answer the question, if more triggers activated on the same message, the first one in the "
+            "list would be the one to trigger, in our case the one with the pattern `\"end\"`.\n"
             "\n"
-            "[**Advanced**] If you want to use the special characters `?` and `*` in your pattern "
-            "without them being treated as wildcards, you can escape them by adding "
-            "a backslash (`\\`) before them.\n"
-            "For example, if you want to match the messages `\"Where did mum go?\"` and `\"Where did mom go?\"`, "
-            "you can use the pattern `\"Where did m?m go\\?\"`.\n"
-            "The first `?` is an actual wildcard, whereas the second `?` is just a normal character."
+            "In this specific case, the second trigger will never actually activate, because it contains "
+            "`\"end\"` within itself, and the first trigger will always activate first.\n"
+            "\n"
+            "This is why it's important to understand how IDs work, and how to use them to your advantage.\n"
+            "A rule of thumb is to put more \"specific\" triggers first, and more \"general\" triggers "
+            "last.\n"
         )
     )
 
-    return embed, "Property: `uses_wildcards`", "Property: uses_wildcards"
+    return embed, "Caveats"

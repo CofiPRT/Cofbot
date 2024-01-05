@@ -1,8 +1,8 @@
 import asyncio
 import logging
+import traceback
 
 import discord
-import peewee
 from discord.ext import commands
 from typing import Literal, Optional
 
@@ -61,8 +61,9 @@ async def sync(
 async def load_extensions():
     try:
         await bot.load_extension('triggers')
-    except peewee.PeeweeException as e:
-        print(f"An error has occurred while initializing the database: {e}")
+    except Exception as e:
+        print(f"An error has occurred while loading extensions: {e}")
+        traceback.print_exc()
         exit(1)
 
 

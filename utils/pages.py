@@ -4,23 +4,19 @@ import discord
 class PageNumberModal(discord.ui.Modal, title="Enter a page number"):
     number = discord.ui.TextInput(label="Number")  # type: ignore
 
-    def __init__(self, max_number, callback_func):
+    def __init__(self, max_number):
         super().__init__(timeout=None)
         self.max_number = max_number
         self.number.placeholder = f'1-{max_number}'
-        self.callback_func = callback_func
+        self.final_value = None
 
     async def on_submit(self, interaction: discord.Interaction):
-        page_number = int(self.number.value)
-
-        if page_number < 1 or page_number > self.max_number:
-            return await interaction.response.send_message(  # type: ignore
-                f"Invalid page number. Please enter a number between 1 and {self.max_number}",
-                ephemeral=True
-            )
+        try:
+            self.final_value = int(self.number.value)
+        except ValueError:
+            pass
 
         await interaction.response.defer()  # type: ignore
-        await self.callback_func(int(self.number.value))
 
 
 class Pages(discord.ui.View):
@@ -54,10 +50,18 @@ class Pages(discord.ui.View):
 
     @discord.ui.button(style=discord.ButtonStyle.blurple)
     async def goto(self, interaction: discord.Interaction, _: discord.ui.Button):
-        async def callback_func(page_number: int):
-            await self.show_page(page_number - 1, interaction, first_interaction=False, defer_on_edit=False)
+        modal = PageNumberModal(self.page_count)
+        await interaction.response.send_modal(modal)  # type: ignore
+        await modal.wait()
 
-        await interaction.response.send_modal(PageNumberModal(self.page_count, callback_func))  # type: ignore
+        page_number = modal.final_value
+        if page_number is None or page_number < 1 or page_number > self.page_count:
+            return await interaction.followup.send(  # type: ignore
+                f"Invalid page number. Please enter a number between 1 and {self.page_count}",
+                ephemeral=True
+            )
+
+        await self.show_page(page_number - 1, interaction, first_interaction=False, defer_on_edit=False)
 
     @discord.ui.button(style=discord.ButtonStyle.blurple, emoji="➡")
     async def next(self, interaction: discord.Interaction, _: discord.ui.Button):
